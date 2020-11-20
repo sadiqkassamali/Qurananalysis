@@ -13,6 +13,8 @@ if (len(d) > 0) :
     d.fillna('', inplace=True)
     print("print total data after NaN removal: " )
     print(d)
+    d.drop('Unnamed: 3', axis=1)
+    print(d)
     #print(d.head()) #if you want to view first n-rows
     #print(d.tail())  # if you want to view last  n-rows
     #print(d[20:30 + 1])  #slice and dice of rows from 20 : 30
