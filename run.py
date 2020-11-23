@@ -40,13 +40,14 @@ print(dropped_column)
 
 # You can filter for one surah too if you want!
 verses = dropped_column['Text'].values.tolist()
-# pprint(verses)
+print(verses)
 for i in range(len(verses)):
     verses[i] = [word.lower() for word in verses[i] if re.match('^[a-zA-Z]+', word)]
 
 #Creating a model
 model = Word2Vec(verses, min_count=5, window=5, workers=10, alpha=0.25, sg=0)
 model[model.wv.vocab]
+model.save("quran.model")
 X = model[model.wv.vocab]
 pca = PCA(n_components=2)
 
