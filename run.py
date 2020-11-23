@@ -46,11 +46,11 @@ for i in range(len(verses)):
 
 #Creating a model
 model = Word2Vec(verses, min_count=5, window=5, workers=10, alpha=0.25, sg=0)
-model[model.wv.vocab]
-model.save("quran.model")
+model.wv.vocab
+model.save("quran.bin")
 X = model[model.wv.vocab]
 pca = PCA(n_components=2)
-
+pca.fit(X)
 result = pca.fit_transform(X)
 # create a scatter plot of the projection
 plt.scatter(result[:, 0], result[:, 1])
