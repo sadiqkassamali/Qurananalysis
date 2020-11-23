@@ -44,12 +44,12 @@ verses = dropped_column['Text'].values.tolist()
 for i in range(len(verses)):
     verses[i] = [word.lower() for word in verses[i] if re.match('^[a-zA-Z]+', word)]
 
-#plotting the graph
-
-model = Word2Vec(verses, min_count=5, window=7, workers=10, alpha=0.22, sg=1)
+# Creating a model
+model = Word2Vec(verses, min_count=2, window=3, workers=10, alpha=0.25, sg=0)
 model[model.wv.vocab]
 X = model[model.wv.vocab]
 pca = PCA(n_components=2)
+
 result = pca.fit_transform(X)
 # create a scatter plot of the projection
 plt.scatter(result[:, 0], result[:, 1])
