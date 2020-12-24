@@ -62,9 +62,9 @@ print_similar_word_cloud(word, 100)
 
 ```
 ## Plot results
-###Plotting two figures, the first for `allah`, and the second is `nuh`
+##Plotting two figures, the first for `allah`, and the second is `nuh`
 
 ![Quran-Analysis](Figure_2.png "Words ")
 
-###Plotting scatter shot of all words
+##Plotting scatter shot of all words
 ![Quran-Analysis](Figure_1.png "scatter ")
