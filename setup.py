@@ -4,9 +4,9 @@ setup(
     name='Qurananalysis',
     version='0.1',
     packages=[''],
-    url='github.com/sadiqkassamali/qurananalysis',
+    url='',
     license='MIT',
     author='Sadiq Kassamali',
-    author_email='sadiqkassamali@gmail.com',
-    description='Just want to learn'
+    author_email='sadiq.kassamali@gmail.com',
+    description='Quran Analysis with NLP and Machine Learning'
 )
