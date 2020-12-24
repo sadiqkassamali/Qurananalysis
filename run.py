@@ -21,6 +21,7 @@ plt.ylim([-3, 3])
 plt.yticks(np.arange(-3, 3, .5))
 plt.xticks(np.arange(-3, 3, .5))
 plt.show
+
 # Start using the model and play with visualization
 plt.figure(2)
 plt.subplot(211)
