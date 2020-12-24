@@ -25,10 +25,11 @@ plt.show()
 # Start using the model and play with visualization
 plt.figure(1)
 plt.subplot(211)
-# Search for work Prophet and something that's closest
-word = 'prophet'
-print_similar_word_cloud(word, 20)
-plt.subplot(212)
-# Search for work moses and something that's closest
+# Search for work Allah and something that's closest
 word = 'allah'
-print_similar_word_cloud(word, 20)
+print_similar_word_cloud(word, 100)
+
+plt.subplot(212)
+# Search for work nuh and something that's closest
+word = 'nuh'
+print_similar_word_cloud(word, 100)
