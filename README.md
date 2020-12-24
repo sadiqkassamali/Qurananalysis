@@ -39,16 +39,31 @@ contextToWords.process_quran_book(min_count, window, workers, alpha)
 # Start using the model and play with visualization
 # You can generate multiple plots through matlibplot as follows
 
+#Scatter plott of all words.
 plt.figure(1)
+circle = plt.Circle((0, 0), radius=1, fc='w')
+plt.gca().add_patch(circle)
+plt.xlim([-3, 3])
+plt.ylim([-3, 3])
+plt.yticks(np.arange(-3, 3, .5))
+plt.xticks(np.arange(-3, 3, .5))
+plt.show
+# Start using the model and play with visualization
+plt.figure(2)
 plt.subplot(211)
-word = 'prophet'
-contextToWords.print_similar_word_cloud(word, 20)
+# Search for work Allah and something that's closest
+word = 'allah'
+print_similar_word_cloud(word, 100)
 
 plt.subplot(212)
-word = 'allah'
-contextToWords.print_similar_word_cloud(word, 20)
+# Search for work nuh and something that's closest
+word = 'nuh'
+print_similar_word_cloud(word, 100)
+
 ```
-## Result Plot
-Plotting two figures, the first for `prophet`, and the second is `allah`
-![Quran NLP](Figure_2.png "Words ")
+## Plot results
+Plotting two figures, the first for `allah`, and the second is `nuh`
+![Quran-Analysis](Figure_2.png "Words ")
+![Quran-Analysis](Figure_1.png "scatter ")
+
 
