@@ -2,7 +2,7 @@ import customtkinter as ctk
 import logging
 from PIL import Image, ImageTk
 from plotter import plot_side_by_side_word_cloud, plot_word_hierarchy, plot_tsne, plot_pca, plot_kmeans_clustering
-import time
+import pandas as pd  # Assuming pandas for loading CSV data
 
 # Set up logging to console and file
 logging.basicConfig(
@@ -10,13 +10,23 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s')
 console_logger = logging.getLogger()
 
+# Placeholder function for analyzing data (Quran and Bible text)
+def analyze_data(file_path_quran, file_path_bible, word_of_interest):
+    # In a real implementation, this would analyze the data for contradictions.
+    # Here, we'll just return a mock result.
+    quran_data = pd.read_csv(file_path_quran)
+    bible_data = pd.read_csv(file_path_bible)
 
-def display_results(
-        results_text,
-        wordcloud_image=None,
-        node_image=None,
-        tsne_image=None,
-        pca_image=None):
+    # Mock contradiction detection logic based on word_of_interest
+    contradictions_found = word_of_interest.lower() in quran_data['text'].str.lower().values and \
+                           word_of_interest.lower() in bible_data['text'].str.lower().values
+
+    return contradictions_found
+
+# Placeholder variable for the Quran model (can be your actual dataset or a model)
+quran_model = pd.read_csv('data/quran.csv')  # Example of loading the Quran data into a pandas DataFrame
+
+def display_results(results_text, wordcloud_image=None, node_image=None, tsne_image=None, pca_image=None):
     """Update the UI with results and images."""
     result_label.config(text=results_text)
 
@@ -60,7 +70,6 @@ def display_results(
     else:
         pca_label.config(image=None)
 
-
 def on_submit_button():
     word_of_interest = word_entry.get()  # Get user input
     quran_file = 'data/quran.csv'  # Path to Quran CSV file
@@ -68,10 +77,7 @@ def on_submit_button():
 
     # Perform analysis and get results
     logging.info(f"Starting analysis for word: {word_of_interest}")
-    contradictions = analyze_data(
-        file_path_quran=quran_file,
-        file_path_bible=bible_file,
-        word_of_interest=word_of_interest)
+    contradictions = analyze_data(file_path_quran=quran_file, file_path_bible=bible_file, word_of_interest=word_of_interest)
 
     # Create the results text
     if contradictions:
@@ -92,8 +98,7 @@ def on_submit_button():
 
     if show_wordcloud:
         logging.info("Generating Word Cloud visualization...")
-        wordcloud = plot_side_by_side_word_cloud(
-            word_of_interest, 10, quran_model)
+        wordcloud = plot_side_by_side_word_cloud(word_of_interest, 10, quran_model)
         wordcloud_path = 'wordcloud.png'
         wordcloud.to_file(wordcloud_path)
         wordcloud_image = wordcloud_path
@@ -120,13 +125,7 @@ def on_submit_button():
         pca_image = pca_path
 
     # Display the results and images in the UI
-    display_results(
-        results_text,
-        wordcloud_image,
-        node_image,
-        tsne_image,
-        pca_image)
-
+    display_results(results_text, wordcloud_image, node_image, tsne_image, pca_image)
 
 # Initialize main UI window
 root = ctk.CTk()
@@ -155,8 +154,7 @@ node_var = ctk.BooleanVar(value=False)
 tsne_var = ctk.BooleanVar(value=False)
 pca_var = ctk.BooleanVar(value=False)
 
-wordcloud_check = ctk.CTkCheckBox(
-    root, text="Word Cloud", variable=wordcloud_var)
+wordcloud_check = ctk.CTkCheckBox(root, text="Word Cloud", variable=wordcloud_var)
 wordcloud_check.pack(padx=10, pady=5)
 
 node_check = ctk.CTkCheckBox(root, text="Node Hierarchy", variable=node_var)
