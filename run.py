@@ -2,12 +2,17 @@ import pandas as pd
 import logging
 import re
 from gensim.models import Word2Vec
-from plotter import plot_side_by_side_word_cloud, plot_word_hierarchy, plot_word_cloud
+from plotter import plot_side_by_side_word_cloud, plot_word_hierarchy, plot_word_cloud, plot_tsne, plot_heatmap, plot_dendrogram, plot_pca, plot_bar, plot_interactive_bar, plot_kmeans_clustering, plot_choropleth
 from wordcloud import WordCloud
 import time
 import os
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
+from sklearn.cluster import KMeans
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # Set up logging
 logging.basicConfig(
@@ -110,6 +115,7 @@ def print_similar_word_cloud(word_of_interest, topn, model):
     wordcloud = generate_word_cloud(model, word_of_interest, topn)
     return wordcloud
 
+
 # New functions for similarity and contradiction analysis
 
 
@@ -209,6 +215,24 @@ def analyze_data(
             quran_root_word,
             bible_root_word)
 
+    # Additional Visualizations
+    if file_path_quran and file_path_bible:
+        # Example for visualizations: t-SNE, Heatmap, PCA, etc.
+        # Visualize Word2Vec Embeddings using t-SNE
+        embeddings = [quran_model.wv[word] for word in quran_model.wv.index_to_key]
+        labels = quran_model.wv.index_to_key
+        plot_tsne(embeddings, labels)
+
+        # Visualize a PCA of Word2Vec Embeddings
+        plot_pca(embeddings, labels)
+
+        # Visualize KMeans clustering of Word2Vec Embeddings
+        plot_kmeans_clustering(embeddings)
+
+        # Example of similarity matrix (for heatmap)
+        similarity_matrix = cosine_similarity(embeddings)
+        plot_heatmap(similarity_matrix)
+
     # Return contradictions if necessary
     return contradictions
 
@@ -224,6 +248,6 @@ if __name__ == "__main__":
         word_of_interest=word_to_compare)
 
     if contradictions:
-        print(f"Contradictions detected: {len(contradictions)}")
+        print("Contradictions found. Check the logs for details.")
     else:
-        print("No contradictions detected.")
+        print("No contradictions found.")
