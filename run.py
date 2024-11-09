@@ -1,253 +1,193 @@
-import pandas as pd
+import customtkinter as ctk
 import logging
-import re
-from gensim.models import Word2Vec
-from plotter import plot_side_by_side_word_cloud, plot_word_hierarchy, plot_word_cloud, plot_tsne, plot_heatmap, plot_dendrogram, plot_pca, plot_bar, plot_interactive_bar, plot_kmeans_clustering, plot_choropleth
-from wordcloud import WordCloud
+from PIL import Image, ImageTk
+from plotter import plot_side_by_side_word_cloud, plot_word_hierarchy, plot_tsne, plot_pca, plot_kmeans_clustering
 import time
-import os
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.decomposition import PCA
-from sklearn.manifold import TSNE
-from sklearn.cluster import KMeans
-import seaborn as sns
-import matplotlib.pyplot as plt
 
-# Set up logging
+# Set up logging to console and file
 logging.basicConfig(
-    filename='analysis.log',
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s')
+console_logger = logging.getLogger()
 
 
-def load_and_preprocess_bible(file_path):
-    """
-    Load and preprocess Bible CSV data.
-    """
-    try:
-        bible_df = pd.read_csv(file_path)
-        bible_df.fillna('', inplace=True)
-        bible_df['Text'] = bible_df['Text'].apply(
-            lambda x: re.sub(r"[^a-zA-Z\s]", "", x.lower()))
-        logging.info(f"Loaded Bible data: {len(bible_df)} verses.")
-        return bible_df
-    except Exception as e:
-        logging.error(f"Failed to load Bible data: {e}")
-        return None
+def display_results(
+        results_text,
+        wordcloud_image=None,
+        node_image=None,
+        tsne_image=None,
+        pca_image=None):
+    """Update the UI with results and images."""
+    result_label.config(text=results_text)
+
+    # Display Word Cloud Image
+    if wordcloud_image:
+        wordcloud_img = Image.open(wordcloud_image)
+        wordcloud_img = wordcloud_img.resize((400, 200))
+        wordcloud_tk = ImageTk.PhotoImage(wordcloud_img)
+        wordcloud_label.config(image=wordcloud_tk)
+        wordcloud_label.image = wordcloud_tk
+    else:
+        wordcloud_label.config(image=None)
+
+    # Display Node Hierarchy Image
+    if node_image:
+        node_img = Image.open(node_image)
+        node_img = node_img.resize((400, 200))
+        node_tk = ImageTk.PhotoImage(node_img)
+        node_label.config(image=node_tk)
+        node_label.image = node_tk
+    else:
+        node_label.config(image=None)
+
+    # Display t-SNE Image
+    if tsne_image:
+        tsne_img = Image.open(tsne_image)
+        tsne_img = tsne_img.resize((400, 200))
+        tsne_tk = ImageTk.PhotoImage(tsne_img)
+        tsne_label.config(image=tsne_tk)
+        tsne_label.image = tsne_tk
+    else:
+        tsne_label.config(image=None)
+
+    # Display PCA Image
+    if pca_image:
+        pca_img = Image.open(pca_image)
+        pca_img = pca_img.resize((400, 200))
+        pca_tk = ImageTk.PhotoImage(pca_img)
+        pca_label.config(image=pca_tk)
+        pca_label.image = pca_tk
+    else:
+        pca_label.config(image=None)
 
 
-def load_and_preprocess_quran(file_path):
-    """
-    Load and preprocess Quran CSV data.
-    """
-    try:
-        quran_df = pd.read_csv(file_path)
-        quran_df.fillna('', inplace=True)
-        quran_df['Text'] = quran_df['Text'].apply(
-            lambda x: re.sub(r"[^a-zA-Z\s]", "", x.lower()))
-        logging.info(f"Loaded Quran data: {len(quran_df)} verses.")
-        return quran_df
-    except Exception as e:
-        logging.error(f"Failed to load Quran data: {e}")
-        return None
-
-
-def train_word2vec_model(text_data):
-    """
-    Train a Word2Vec model on tokenized text data.
-    """
-    logging.info("Training Word2Vec model...")
-    model = Word2Vec(
-        text_data,
-        vector_size=100,
-        window=5,
-        min_count=10,
-        workers=4)
-    logging.info("Word2Vec model training completed.")
-    return model
-
-
-def preprocess_verses_for_word2vec(df, column='Text'):
-    """
-    Preprocess verses for Word2Vec input: tokenizing and cleaning.
-    """
-    processed_verses = df[column].apply(lambda x: x.split()).tolist()
-    return processed_verses
-
-
-def find_related_words_hierarchy(word, model, depth=3):
-    """
-    Find a hierarchy of related words based on Word2Vec model.
-    """
-    related_words = [[word]]  # Start with the main word
-    for _ in range(depth):
-        next_level = []
-        for w in related_words[-1]:
-            try:
-                similar_words = model.wv.most_similar(positive=[w], topn=5)
-                next_level.extend(
-                    [w[0] for w in similar_words if w[0] not in next_level])
-            except KeyError:
-                continue
-        if next_level:
-            related_words.append(next_level)
-    return related_words
-
-
-def generate_word_cloud(model, word_of_interest, topn=10):
-    """
-    Generate a word cloud based on the Word2Vec model for the given word.
-    """
-    similar_words = model.wv.most_similar(
-        positive=[word_of_interest], topn=topn)
-    word_freq = {word: score for word, score in similar_words}
-    wordcloud = WordCloud(
-        width=800,
-        height=400).generate_from_frequencies(word_freq)
-    return wordcloud
-
-
-def print_similar_word_cloud(word_of_interest, topn, model):
-    """
-    Print the similar word cloud for the given word.
-    """
-    wordcloud = generate_word_cloud(model, word_of_interest, topn)
-    return wordcloud
-
-
-# New functions for similarity and contradiction analysis
-
-
-def get_semantic_similarity(text1, text2):
-    """
-    Calculate semantic similarity using Sentence-BERT.
-    """
-    model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
-    embeddings1 = model.encode([text1])
-    embeddings2 = model.encode([text2])
-    return cosine_similarity(embeddings1, embeddings2)[0][0]
-
-
-def detect_contradictions(quran_data, bible_data, threshold=0.5):
-    """
-    Detect contradictions based on semantic similarity.
-    """
-    contradictions = []
-    for quran_verse, bible_verse in zip(
-            quran_data['Text'], bible_data['Text']):
-        similarity = get_semantic_similarity(quran_verse, bible_verse)
-        if similarity < threshold:
-            contradictions.append({
-                'quran_verse': quran_verse,
-                'bible_verse': bible_verse,
-                'similarity': similarity
-            })
-    return contradictions
-
-
-def analyze_data(
-        file_path_quran=None,
-        file_path_bible=None,
-        word_of_interest=None,
-        topn=10):
-    """
-    Analyze Quran and/or Bible data based on the word of interest.
-    """
-    quran_wordcloud = None
-    bible_wordcloud = None
-    quran_hierarchy = None
-    bible_hierarchy = None
-    quran_root_word = word_of_interest  # Root word for Quran
-    bible_root_word = word_of_interest  # Root word for Bible
-
-    if file_path_quran:
-        # Load and process Quran data
-        quran_data = load_and_preprocess_quran(file_path_quran)
-        quran_verses = preprocess_verses_for_word2vec(quran_data)
-        quran_model = train_word2vec_model(quran_verses)
-        print(f"Finding similar words for '{word_of_interest}' in Quran...")
-        quran_wordcloud = print_similar_word_cloud(
-            word_of_interest, topn, quran_model)
-
-        # Find related words hierarchy in Quran
-        quran_hierarchy = find_related_words_hierarchy(
-            word_of_interest, quran_model)
-        print(
-            f"Related words hierarchy in Quran for '{word_of_interest}': {quran_hierarchy}")
-
-    if file_path_bible:
-        # Load and process Bible data
-        bible_data = load_and_preprocess_bible(file_path_bible)
-        bible_verses = preprocess_verses_for_word2vec(bible_data)
-        bible_model = train_word2vec_model(bible_verses)
-        print(f"Finding similar words for '{word_of_interest}' in Bible...")
-        bible_wordcloud = print_similar_word_cloud(
-            word_of_interest, topn, bible_model)
-
-        # Find related words hierarchy in Bible
-        bible_hierarchy = find_related_words_hierarchy(
-            word_of_interest, bible_model)
-        print(
-            f"Related words hierarchy in Bible for '{word_of_interest}': {bible_hierarchy}")
-
-    # Detect contradictions between Quran and Bible
-    if file_path_quran and file_path_bible:
-        contradictions = detect_contradictions(quran_data, bible_data)
-        print(
-            f"Detected {len(contradictions)} contradictions between Quran and Bible.")
-
-        # Log contradictions
-        if contradictions:
-            for contradiction in contradictions:
-                logging.info(
-                    f"Contradiction detected: Quran - {contradiction['quran_verse']}, Bible - {contradiction['bible_verse']}")
-
-    # Plot the word clouds side by side with labels
-    if quran_wordcloud and bible_wordcloud:
-        plot_side_by_side_word_cloud(quran_wordcloud, bible_wordcloud)
-
-    # Plot related word hierarchy and link root words
-    if quran_hierarchy and bible_hierarchy:
-        plot_word_hierarchy(
-            quran_hierarchy,
-            bible_hierarchy,
-            quran_root_word,
-            bible_root_word)
-
-    # Additional Visualizations
-    if file_path_quran and file_path_bible:
-        # Example for visualizations: t-SNE, Heatmap, PCA, etc.
-        # Visualize Word2Vec Embeddings using t-SNE
-        embeddings = [quran_model.wv[word] for word in quran_model.wv.index_to_key]
-        labels = quran_model.wv.index_to_key
-        plot_tsne(embeddings, labels)
-
-        # Visualize a PCA of Word2Vec Embeddings
-        plot_pca(embeddings, labels)
-
-        # Visualize KMeans clustering of Word2Vec Embeddings
-        plot_kmeans_clustering(embeddings)
-
-        # Example of similarity matrix (for heatmap)
-        similarity_matrix = cosine_similarity(embeddings)
-        plot_heatmap(similarity_matrix)
-
-    # Return contradictions if necessary
-    return contradictions
-
-
-# Example of calling the function
-if __name__ == "__main__":
+def on_submit_button():
+    word_of_interest = word_entry.get()  # Get user input
     quran_file = 'data/quran.csv'  # Path to Quran CSV file
     bible_file = 'data/bible.csv'  # Path to Bible CSV file
-    word_to_compare = "god"        # Example word to compare
+
+    # Perform analysis and get results
+    logging.info(f"Starting analysis for word: {word_of_interest}")
     contradictions = analyze_data(
         file_path_quran=quran_file,
         file_path_bible=bible_file,
-        word_of_interest=word_to_compare)
+        word_of_interest=word_of_interest)
 
+    # Create the results text
     if contradictions:
-        print("Contradictions found. Check the logs for details.")
+        results_text = f"Contradictions found for '{word_of_interest}'. Check the logs for details."
     else:
-        print("No contradictions found.")
+        results_text = f"No contradictions found for '{word_of_interest}'."
+
+    # Get visualization choices from UI options
+    show_wordcloud = wordcloud_var.get()
+    show_node = node_var.get()
+    show_tsne = tsne_var.get()
+    show_pca = pca_var.get()
+
+    wordcloud_image = None
+    node_image = None
+    tsne_image = None
+    pca_image = None
+
+    if show_wordcloud:
+        logging.info("Generating Word Cloud visualization...")
+        wordcloud = plot_side_by_side_word_cloud(
+            word_of_interest, 10, quran_model)
+        wordcloud_path = 'wordcloud.png'
+        wordcloud.to_file(wordcloud_path)
+        wordcloud_image = wordcloud_path
+
+    if show_node:
+        logging.info("Generating Node Hierarchy visualization...")
+        node_hierarchy = plot_word_hierarchy(word_of_interest, quran_model)
+        node_hierarchy_path = 'node_hierarchy.png'
+        node_hierarchy.to_file(node_hierarchy_path)
+        node_image = node_hierarchy_path
+
+    if show_tsne:
+        logging.info("Generating t-SNE visualization...")
+        tsne_plot = plot_tsne(word_of_interest, quran_model)
+        tsne_path = 'tsne.png'
+        tsne_plot.to_file(tsne_path)
+        tsne_image = tsne_path
+
+    if show_pca:
+        logging.info("Generating PCA visualization...")
+        pca_plot = plot_pca(word_of_interest, quran_model)
+        pca_path = 'pca.png'
+        pca_plot.to_file(pca_path)
+        pca_image = pca_path
+
+    # Display the results and images in the UI
+    display_results(
+        results_text,
+        wordcloud_image,
+        node_image,
+        tsne_image,
+        pca_image)
+
+
+# Initialize main UI window
+root = ctk.CTk()
+
+root.title("Quran and Bible Analysis")
+root.geometry("1000x800")
+
+# Set dark theme
+ctk.set_appearance_mode("dark")
+
+# Label for user question input
+question_label = ctk.CTkLabel(root, text="Enter Word or Question:")
+question_label.pack(padx=10, pady=10)
+
+# Entry for user input
+word_entry = ctk.CTkEntry(root, width=400)
+word_entry.pack(padx=10, pady=10)
+
+# Option to select which visualization(s) to show
+visualization_label = ctk.CTkLabel(root, text="Choose Visualizations:")
+visualization_label.pack(padx=10, pady=10)
+
+# Checkboxes for different visualizations
+wordcloud_var = ctk.BooleanVar(value=True)
+node_var = ctk.BooleanVar(value=False)
+tsne_var = ctk.BooleanVar(value=False)
+pca_var = ctk.BooleanVar(value=False)
+
+wordcloud_check = ctk.CTkCheckBox(
+    root, text="Word Cloud", variable=wordcloud_var)
+wordcloud_check.pack(padx=10, pady=5)
+
+node_check = ctk.CTkCheckBox(root, text="Node Hierarchy", variable=node_var)
+node_check.pack(padx=10, pady=5)
+
+tsne_check = ctk.CTkCheckBox(root, text="t-SNE", variable=tsne_var)
+tsne_check.pack(padx=10, pady=5)
+
+pca_check = ctk.CTkCheckBox(root, text="PCA", variable=pca_var)
+pca_check.pack(padx=10, pady=5)
+
+# Submit button to start analysis
+submit_button = ctk.CTkButton(root, text="Analyze", command=on_submit_button)
+submit_button.pack(pady=20)
+
+# Result Label to display contradictions or analysis output
+result_label = ctk.CTkLabel(root, text="", wraplength=700, justify="left")
+result_label.pack(padx=10, pady=10)
+
+# Labels to display images
+wordcloud_label = ctk.CTkLabel(root)
+wordcloud_label.pack(padx=10, pady=10)
+
+node_label = ctk.CTkLabel(root)
+node_label.pack(padx=10, pady=10)
+
+tsne_label = ctk.CTkLabel(root)
+tsne_label.pack(padx=10, pady=10)
+
+pca_label = ctk.CTkLabel(root)
+pca_label.pack(padx=10, pady=10)
+
+# Run the application
+root.mainloop()

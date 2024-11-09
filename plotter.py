@@ -1,144 +1,141 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
+from wordcloud import WordCloud
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.cluster import KMeans
 import numpy as np
-import pandas as pd
-from wordcloud import WordCloud
-from scipy.cluster.hierarchy import dendrogram, linkage
-import plotly.express as px
 
 
-def plot_side_by_side_word_cloud(wordcloud1, wordcloud2, title1='Quran Word Cloud', title2='Bible Word Cloud'):
+def plot_word_cloud(wordcloud):
     """
-    Plot two WordClouds side by side.
+    Plot the word cloud.
     """
-    fig, axs = plt.subplots(1, 2, figsize=(12, 6))
-    axs[0].imshow(wordcloud1, interpolation="bilinear")
-    axs[0].set_title(title1)
-    axs[0].axis('off')
-    axs[1].imshow(wordcloud2, interpolation="bilinear")
-    axs[1].set_title(title2)
-    axs[1].axis('off')
+    plt.figure(figsize=(8, 6))
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis("off")
+    plt.show()
+
+
+def plot_side_by_side_word_cloud(wordcloud1, wordcloud2):
+    """
+    Plot two word clouds side by side for comparison.
+    """
+    fig, axes = plt.subplots(1, 2, figsize=(16, 8))
+
+    axes[0].imshow(wordcloud1, interpolation='bilinear')
+    axes[0].axis("off")
+    axes[0].set_title("Quran Word Cloud")
+
+    axes[1].imshow(wordcloud2, interpolation='bilinear')
+    axes[1].axis("off")
+    axes[1].set_title("Bible Word Cloud")
+
     plt.show()
 
 
 def plot_word_hierarchy(quran_hierarchy, bible_hierarchy, quran_root_word, bible_root_word):
     """
-    Plot a word hierarchy as a tree structure.
+    Plot the hierarchy of related words for Quran and Bible.
     """
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.set_title(f'Word Hierarchy for "{quran_root_word}" and "{bible_root_word}"')
-    ax.plot(range(len(quran_hierarchy)), quran_hierarchy, label=f'{quran_root_word} Hierarchy')
-    ax.plot(range(len(bible_hierarchy)), bible_hierarchy, label=f'{bible_root_word} Hierarchy')
-    ax.legend()
-    plt.show()
+    fig, axes = plt.subplots(1, 2, figsize=(16, 8))
 
+    axes[0].barh(range(len(quran_hierarchy[0])), [len(level) for level in quran_hierarchy], color="green")
+    axes[0].set_title(f"Quran Word Hierarchy for '{quran_root_word}'")
 
-def plot_word_cloud(wordcloud):
-    """
-    Plot a single word cloud.
-    """
-    plt.figure(figsize=(10, 6))
-    plt.imshow(wordcloud, interpolation="bilinear")
-    plt.axis('off')
+    axes[1].barh(range(len(bible_hierarchy[0])), [len(level) for level in bible_hierarchy], color="blue")
+    axes[1].set_title(f"Bible Word Hierarchy for '{bible_root_word}'")
+
+    plt.tight_layout()
     plt.show()
 
 
 def plot_tsne(embeddings, labels):
     """
-    Plot the t-SNE of the Word2Vec embeddings.
+    Plot t-SNE visualization of Word2Vec embeddings.
     """
     tsne = TSNE(n_components=2, random_state=42)
-    tsne_results = tsne.fit_transform(embeddings)
+    tsne_result = tsne.fit_transform(embeddings)
 
-    df = pd.DataFrame(tsne_results, columns=['x', 'y'])
-    df['label'] = labels
+    plt.figure(figsize=(10, 8))
+    plt.scatter(tsne_result[:, 0], tsne_result[:, 1], c='blue', marker='o')
+    for i, label in enumerate(labels):
+        plt.annotate(label, (tsne_result[i, 0], tsne_result[i, 1]))
 
-    plt.figure(figsize=(12, 8))
-    sns.scatterplot(x='x', y='y', hue='label', data=df, palette='viridis', legend='full')
-    plt.title('t-SNE visualization of Word2Vec Embeddings')
+    plt.title("t-SNE Visualization of Word2Vec Embeddings")
     plt.show()
 
 
 def plot_pca(embeddings, labels):
     """
-    Plot the PCA of the Word2Vec embeddings.
+    Plot PCA visualization of Word2Vec embeddings.
     """
     pca = PCA(n_components=2)
-    pca_results = pca.fit_transform(embeddings)
+    pca_result = pca.fit_transform(embeddings)
 
-    df = pd.DataFrame(pca_results, columns=['x', 'y'])
-    df['label'] = labels
+    plt.figure(figsize=(10, 8))
+    plt.scatter(pca_result[:, 0], pca_result[:, 1], c='orange', marker='o')
+    for i, label in enumerate(labels):
+        plt.annotate(label, (pca_result[i, 0], pca_result[i, 1]))
 
-    plt.figure(figsize=(12, 8))
-    sns.scatterplot(x='x', y='y', hue='label', data=df, palette='viridis', legend='full')
-    plt.title('PCA visualization of Word2Vec Embeddings')
+    plt.title("PCA Visualization of Word2Vec Embeddings")
     plt.show()
 
 
-def plot_kmeans_clustering(embeddings, n_clusters=5):
+def plot_heatmap(matrix):
     """
-    Plot KMeans clustering of the Word2Vec embeddings.
+    Plot a heatmap of a similarity matrix.
+    """
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(matrix, cmap="YlGnBu", annot=False, fmt=".2f", linewidths=0.5)
+    plt.title("Heatmap of Word Similarities")
+    plt.show()
+
+
+def plot_kmeans_clustering(embeddings, n_clusters=3):
+    """
+    Plot KMeans clustering of Word2Vec embeddings.
     """
     kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-    clusters = kmeans.fit_predict(embeddings)
+    kmeans.fit(embeddings)
+    labels = kmeans.labels_
 
-    df = pd.DataFrame(embeddings, columns=[f'feature_{i}' for i in range(embeddings.shape[1])])
-    df['cluster'] = clusters
-
-    plt.figure(figsize=(12, 8))
-    sns.scatterplot(x=df.columns[0], y=df.columns[1], hue='cluster', data=df, palette='tab10')
-    plt.title(f'KMeans Clustering of Word2Vec Embeddings (n_clusters={n_clusters})')
+    plt.figure(figsize=(10, 8))
+    plt.scatter(embeddings[:, 0], embeddings[:, 1], c=labels, cmap="viridis")
+    plt.title(f"KMeans Clustering of Word2Vec Embeddings (n_clusters={n_clusters})")
     plt.show()
 
 
-def plot_heatmap(similarity_matrix):
+def plot_dendrogram(data, title="Dendrogram"):
     """
-    Plot a heatmap of the similarity matrix (e.g., Word2Vec cosine similarity).
+    Plot a dendrogram using hierarchical clustering.
     """
-    plt.figure(figsize=(12, 8))
-    sns.heatmap(similarity_matrix, annot=False, cmap='coolwarm', linewidths=0.5)
-    plt.title('Heatmap of Semantic Similarities')
-    plt.show()
+    from scipy.cluster.hierarchy import dendrogram, linkage
 
-
-def plot_dendrogram(embeddings, labels):
-    """
-    Plot a dendrogram based on hierarchical clustering of embeddings.
-    """
-    Z = linkage(embeddings, 'ward')
-
-    plt.figure(figsize=(10, 6))
-    dendrogram(Z, labels=labels, leaf_rotation=90)
-    plt.title('Dendrogram of Word2Vec Embeddings')
-    plt.show()
-
-
-def plot_bar(data, title='Bar Plot', xlabel='Categories', ylabel='Values'):
-    """
-    Simple bar plot for categorical data.
-    """
-    plt.figure(figsize=(10, 6))
-    data.plot(kind='bar', color='skyblue')
+    linked = linkage(data, 'ward')
+    plt.figure(figsize=(10, 8))
+    dendrogram(linked)
     plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
     plt.show()
 
 
-def plot_interactive_bar(data, title='Interactive Bar Plot', xlabel='Categories', ylabel='Values'):
+def plot_interactive_bar(labels, values, title="Interactive Bar Chart"):
     """
-    Interactive bar plot using Plotly for better interactivity.
+    Plot an interactive bar chart.
     """
-    fig = px.bar(data, x=data.index, y=data.values, title=title, labels={data.index: xlabel, data.values: ylabel})
+    import plotly.graph_objects as go
+
+    fig = go.Figure(data=[go.Bar(x=labels, y=values)])
+    fig.update_layout(title=title, xaxis_title='Words', yaxis_title='Frequency')
     fig.show()
 
 
-def plot_choropleth(data, locations, color='red'):
+def plot_choropleth(data, location_column, value_column, title="Choropleth Map"):
     """
-    Plot a choropleth map (geographical data visualization).
+    Plot a choropleth map.
     """
-    fig = px.choropleth(data_frame=data, locations=locations, color=color)
+    import plotly.express as px
+
+    fig = px.choropleth(data, locations=location_column, color=value_column,
+                        color_continuous_scale='Viridis', title=title)
     fig.show()
