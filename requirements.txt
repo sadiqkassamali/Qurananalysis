@@ -1,7 +1,7 @@
 matplotlib==3.9.2
 pandas==2.2.3
 scikit-learn==1.5.2
-setuptools==70.0.0
+setuptools==78.1.1
 numpy==1.26.4
 plotter==1.3.20
 customtkinter==5.2.2
